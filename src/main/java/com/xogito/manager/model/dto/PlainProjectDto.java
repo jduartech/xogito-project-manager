@@ -9,7 +9,6 @@ public class PlainProjectDto {
     private String name;
     private String description;
 
-
     public static PlainProjectDto from(Project project) {
         PlainProjectDto plainProjectDto = new PlainProjectDto();
         plainProjectDto.setId(project.getId());

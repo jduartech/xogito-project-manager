@@ -1,147 +1,151 @@
 package com.xogito.manager.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.xogito.manager.fixtures.UserFixture;
 import com.xogito.manager.model.User;
-import com.xogito.manager.service.UserService;
+import com.xogito.manager.model.dto.Paging;
+import com.xogito.manager.model.dto.UserDto;
+import com.xogito.manager.repository.UserRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.MockitoAnnotations;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.test.web.servlet.ResultActions;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@ExtendWith(MockitoExtension.class)
+@SpringBootTest
+@AutoConfigureMockMvc
 class UserControllerTest {
 
-    @Mock
-    private UserService userService;
-    private User user;
-    private User userUpdated;
-    private Map<String, Object> userMap;
-
-    @InjectMocks
-    private UserController userController;
-
+    @Autowired
     private MockMvc mockMvc;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    private AutoCloseable autoCloseable;
+
     @BeforeEach
-    public void setup() {
-        user = new User();
-        user.setId(1L);
-        user.setName("Test User");
-        user.setEmail("user@test.com");
-
-        userMap = new HashMap<>();
-
-        userUpdated = new User();
-        userUpdated.setId(1L);
-        userUpdated.setName("Jon Doe");
-        userUpdated.setEmail("user@test.com");
-
-        mockMvc = MockMvcBuilders.standaloneSetup(userController).build();
+    void setUp() {
+        autoCloseable = MockitoAnnotations.openMocks(this);
     }
 
     @AfterEach
-    void tearDown() {
-        user = null;
-        userUpdated = null;
-        userMap = null;
+    void tearDown() throws Exception{
+        userRepository.deleteAll();
+        userRepository.deleteAll();
+        autoCloseable.close();
     }
 
     @Test
-    public void PostMappingOfUser() throws Exception {
-        when(userService.createUser(any())).thenReturn(user);
-        mockMvc.perform(post("/api/v1/users").
-                contentType(MediaType.APPLICATION_JSON).
-                content(asJsonString(user))).
-                andExpect(status().isCreated());
-        verify(userService, times(1)).createUser(any());
+    public void shouldCreateAnUser() throws Exception {
+        User user = UserFixture.getSingleUser();
+        ResultActions resultActions = mockMvc.perform(post("/api/v1/users")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(UserDto.from(user))));
+        resultActions.andExpect(status().isCreated());
+        List<User> users = userRepository.findAll();
+        assertThat(users.size()).isEqualTo(1);
     }
 
     @Test
-    public void GetMappingOfAllUsersWithSearchMatch() throws Exception {
-        String search = "test";
-        int page = 1;
-        int limit = 10;
-        String[] sort = {"id","desc"};
-        when(userService.getAllUsers(search, page, limit, sort)).thenReturn(userMap);
-        mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/users?search=test").
-                contentType(MediaType.APPLICATION_JSON)).
-                andDo(MockMvcResultHandlers.print());
-        verify(userService).getAllUsers(search, page, limit, sort);
-        verify(userService, times(1)).getAllUsers(search, page, limit, sort);
-
-    }
-
-    @Test
-    public void GetMappingOfAllUsersEmptySearchMatch() throws Exception {
-        String search = "Jon";
-        int page = 1;
-        int limit = 10;
-        String[] sort = {"id","desc"};
-        when(userService.getAllUsers(search, page, limit, sort)).thenReturn(userMap);
-        mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/users?search=Jon").
-                        contentType(MediaType.APPLICATION_JSON)).
-                andExpect(MockMvcResultMatchers.status().isOk()).
-                andDo(MockMvcResultHandlers.print());
-        verify(userService).getAllUsers(search, page, limit, sort);
-        verify(userService, times(1)).getAllUsers(search, page, limit, sort);
-
-    }
-
-    @Test
-    public void GetMappingOfUserShouldReturnRespectiveUser() throws Exception {
-        when(userService.getUser(user.getId())).thenReturn(user);
-        mockMvc.perform(get("/api/v1/users/1").
-                        contentType(MediaType.APPLICATION_JSON)).
-                andExpect(MockMvcResultMatchers.status().isOk())
-                        .andDo(MockMvcResultHandlers.print());
-    }
-
-    @Test
-    public void PutMappingOfUser() throws Exception {
-        User newUser = new User();
-        newUser.setName("Jon Doe");
-        when(userService.updateUser(user.getId(), newUser)).thenReturn(userUpdated);
-        mockMvc.perform(put("/api/v1/users/1").
-                        contentType(MediaType.APPLICATION_JSON).
-                        content(asJsonString(newUser))).
-                        andExpect(status().isOk());
-        verify(userService, times(1)).updateUser(user.getId(), newUser);
-    }
-
-    @Test
-    public void DeleteMappingOfUser() throws Exception {
-        when(userService.deleteUser(user.getId())).thenReturn(userUpdated);
-        mockMvc.perform(delete("/api/v1/users/1").
-                        contentType(MediaType.APPLICATION_JSON)).
-                        andExpect(status().isOk());
-        verify(userService, times(1)).deleteUser(user.getId());
-    }
-
-
-
-    private static String asJsonString(final Object obj){
-        try{
-            return new ObjectMapper().writeValueAsString(obj);
-        }catch (Exception e){
-            throw new RuntimeException(e);
+    public void shouldGetAllUsersWithPaging() throws Exception {
+        List<User> someUsers = UserFixture.generateUsers("karl", 10);
+        for (User user : someUsers) {
+            userRepository.save(user);
         }
+        String search = "karl";
+        int page = 1;
+        int totalElements = 10;
+        int totalPages = 1;
+        Paging paging = new Paging(page, totalElements, totalPages);
+        Map<String, Object> result = new HashMap<>();
+        result.put("data", someUsers);
+        result.put("paging", paging);
+        ResultActions resultActions = mockMvc.perform(get(String.format("/api/v1/users?search=%s&sort=id,asc&limit=10",search))
+                .contentType(MediaType.APPLICATION_JSON));
+        resultActions.andExpect(status().isOk());
+        resultActions.andExpect(content().string(objectMapper.writeValueAsString(result)));
+    }
+
+    @Test
+    public void havingUsersShouldGetEmptyResultWithPaging() throws Exception {
+        List<User> someUsers = UserFixture.generateUsers("karl", 10);
+        for (User user : someUsers) {
+            userRepository.save(user);
+        }
+        String search = "max";
+        int page = 1;
+        int totalElements = 0;
+        int totalPages = 0;
+        Paging paging = new Paging(page, totalElements, totalPages);
+        Map<String, Object> result = new HashMap<>();
+        result.put("data", new ArrayList<>());
+        result.put("paging", paging);
+        ResultActions resultActions = mockMvc.perform(get(String.format("/api/v1/users?search=%s&sort=id,asc&limit=10",search))
+                .contentType(MediaType.APPLICATION_JSON));
+        resultActions.andExpect(status().isOk());
+        resultActions.andExpect(content().string(objectMapper.writeValueAsString(result)));
+
+    }
+
+    
+    @Test
+    public void shouldReturnRespectiveUser() throws Exception {
+        User user = UserFixture.getSingleUser();
+        User dbUser = userRepository.save(user);
+        Long id = dbUser.getId();
+        ResultActions resultActions = mockMvc.perform(get(String.format("/api/v1/users/%d", id))
+                .contentType(MediaType.APPLICATION_JSON));
+        resultActions.andExpect(status().isOk());
+        resultActions.andExpect(content().string(objectMapper.writeValueAsString(dbUser)));
+    }
+
+    @Test
+    public void shouldUpdateUserName() throws Exception {
+        User user = UserFixture.getSingleUser();
+        User dbUser = userRepository.save(user);
+        Long id = dbUser.getId();
+
+        String newName = "User Updated";
+        dbUser.setName(newName);
+
+        UserDto data = new UserDto();
+        data.setName(newName);
+
+        ResultActions resultActions = mockMvc.perform(put(String.format("/api/v1/users/%d", id))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(data)));
+        resultActions.andExpect(status().isOk());
+        resultActions.andExpect(content().string(objectMapper.writeValueAsString(dbUser)));
+    }
+
+    @Test
+    public void shouldDeleteUser() throws Exception {
+        User user = UserFixture.getSingleUser();
+        User dbUser = userRepository.save(user);
+
+        UserDto dataExpected = UserDto.from(dbUser);
+
+        ResultActions resultActions = mockMvc.perform(delete(String.format("/api/v1/users/%d", dbUser.getId()))
+                .contentType(MediaType.APPLICATION_JSON));
+        resultActions.andExpect(status().isOk());
+        resultActions.andExpect(content().string(objectMapper.writeValueAsString(dataExpected)));
     }
 
 }

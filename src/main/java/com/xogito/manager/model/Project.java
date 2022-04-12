@@ -1,7 +1,9 @@
 package com.xogito.manager.model;
 
 import com.xogito.manager.model.dto.ProjectDto;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -11,6 +13,8 @@ import java.util.Collection;
 import java.util.Date;
 
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 @Entity
 @Table(name = "Projects")
 public class Project {
@@ -28,16 +32,6 @@ public class Project {
     @JoinTable(name = "projects_users", joinColumns = @JoinColumn(name = "project_id", referencedColumnName = "id"),
             inverseJoinColumns = @JoinColumn(name = "user_id", referencedColumnName = "id"))
     private Collection<User> users;
-
-    @CreationTimestamp
-    @Temporal(TemporalType.TIMESTAMP)
-    @Column(name="createAt", updatable = false)
-    private Date createdAt;
-
-    @UpdateTimestamp
-    @Temporal(TemporalType.TIMESTAMP)
-    @Column(name="updatedAt", updatable = true)
-    private Date updatedAt;
 
     public static Project from(ProjectDto projectDto) {
         Project project = new Project();

@@ -5,7 +5,6 @@ import com.xogito.manager.model.dto.Paging;
 import com.xogito.manager.model.dto.UserDto;
 import com.xogito.manager.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -29,8 +28,8 @@ public class UserService {
     private final UserRepository userRepository;
 
     public User createUser(User user) {
-        User userDB = userRepository.findByEmail(user.getEmail());
-        if (userDB != null) {
+        Boolean existsEmail = userRepository.existsByEmail(user.getEmail());
+        if (existsEmail) {
             throw new DataIntegrityViolationException(String.format("The email %s is already registered", user.getEmail()));
         }
         return userRepository.save(user);
@@ -52,7 +51,7 @@ public class UserService {
             orders.add(new Order(getSortDirection(sort[1]), sort[0]));
         }
         Pageable pagingSort = PageRequest.of(page-1, limit, Sort.by(orders));
-        Page<User> pageUsers = userRepository.findAll(search, pagingSort);
+        Page<User> pageUsers = userRepository.findAllBySearchPageable(search, pagingSort);
         Paging paging = new Paging(pageUsers.getNumber()+1, pageUsers.getNumberOfElements(), pageUsers.getTotalPages());
         List<UserDto> users = pageUsers.getContent().stream().map(UserDto::from).collect(Collectors.toList());
 

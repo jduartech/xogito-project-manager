@@ -1,7 +1,9 @@
 package com.xogito.manager.model;
 
 import com.xogito.manager.model.dto.UserDto;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -12,6 +14,8 @@ import javax.validation.constraints.Pattern;
 import java.util.Date;
 
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 @Entity
 @Table(name = "Users")
 public class User {
@@ -33,16 +37,6 @@ public class User {
             message = "Invalid email")
     @NotNull(message = "Email is a required field")
     private String email;
-
-    @CreationTimestamp
-    @Temporal(TemporalType.TIMESTAMP)
-    @Column(name="createAt", updatable = false)
-    private Date createdAt;
-
-    @UpdateTimestamp
-    @Temporal(TemporalType.TIMESTAMP)
-    @Column(name="updatedAt", updatable = true)
-    private Date updatedAt;
 
     public static User from(UserDto userDto) {
         User user = new User();

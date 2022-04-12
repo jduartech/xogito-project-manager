@@ -6,7 +6,7 @@ import com.xogito.manager.model.dto.Paging;
 import com.xogito.manager.model.dto.PlainProjectDto;
 import com.xogito.manager.repository.ProjectRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -46,7 +46,7 @@ public class ProjectService {
             orders.add(new Sort.Order(getSortDirection(sort[1]), sort[0]));
         }
         Pageable pagingSort = PageRequest.of(page-1, limit, Sort.by(orders));
-        Page<Project> pageProjects = projectRepository.findAll(search, pagingSort);
+        Page<Project> pageProjects = projectRepository.findAllBySearchPageable(search, pagingSort);
         Paging paging = new Paging(pageProjects.getNumber()+1, pageProjects.getNumberOfElements(), pageProjects.getTotalPages());
         List<PlainProjectDto> projects = pageProjects.getContent().stream().map(PlainProjectDto::from).collect(Collectors.toList());
 

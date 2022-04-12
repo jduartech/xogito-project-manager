@@ -8,5 +8,5 @@ import org.springframework.data.jpa.repository.Query;
 
 public interface ProjectRepository extends JpaRepository<Project, Long> {
     @Query("SELECT p FROM Project p WHERE LOWER(p.name) LIKE LOWER(CONCAT('%', ?1, '%')) ")
-    Page<Project> findAll(String search, Pageable pageable);
+    Page<Project> findAllBySearchPageable(String search, Pageable pageable);
 }

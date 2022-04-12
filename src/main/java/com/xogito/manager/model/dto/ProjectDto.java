@@ -3,6 +3,7 @@ package com.xogito.manager.model.dto;
 import com.xogito.manager.model.Project;
 import lombok.Data;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.stream.Collectors;
 

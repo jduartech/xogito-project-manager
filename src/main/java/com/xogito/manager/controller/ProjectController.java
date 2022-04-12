@@ -23,9 +23,9 @@ public class ProjectController {
     }
 
     @PostMapping
-    public ResponseEntity<ProjectDto> createProject(@Valid @RequestBody final ProjectDto projectDto) {
+    public ResponseEntity<PlainProjectDto> createProject(@Valid @RequestBody final ProjectDto projectDto) {
         Project project = projectService.createProject(Project.from(projectDto));
-        return new ResponseEntity<>(ProjectDto.from(project), HttpStatus.CREATED);
+        return new ResponseEntity<>(PlainProjectDto.from(project), HttpStatus.CREATED);
     }
 
     @PostMapping(value = "{projectId}/users/{userId}/add")
